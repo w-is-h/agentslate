@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- the class is the theme: "dark" is ink, drop it for paper (see index.css) -->
+<html lang="en" class="dark" style="background: #16130f">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- the phone status bar / notch surround follows the active canvas -->
+    <meta name="theme-color" content="#16130f" />
+    <script>
+      try {
+        if (localStorage.getItem("slate.theme") === "light") {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.style.background = "#fbfaf9";
+          document.querySelector('meta[name="theme-color"]').content = "#fbfaf9";
+        }
+      } catch {}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2316130f'/%3E%3Ctext x='31' y='47' font-family='Instrument Serif,Georgia,serif' font-style='italic' font-size='46' fill='%23e2af64' text-anchor='middle'%3Es%3C/text%3E%3C/svg%3E" />
+    <!-- Supporting browsers may resize content for the software keyboard. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
+    <title>slate</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

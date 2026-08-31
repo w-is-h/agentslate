@@ -1,0 +1,37 @@
+[project]
+name = "agentslate"
+version = "0.1.0"
+description = "Shared state between you and your agent: notes, task log, brain, project memory, canvases and boards — one sqlite db behind an MCP server and a web UI"
+readme = "README.md"
+authors = [{ name = "w-is-h" }]
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.141.1",
+    "markdown-it-py>=4.2.0",
+    "mcp>=2.1",
+    "python-multipart>=0.0.32",
+    "pyyaml>=6.0.3",
+    "uvicorn>=0.52.4",
+    "weasyprint>=69.0",
+]
+
+[project.scripts]
+slate = "agentslate.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.21,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.5",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008", "E501"]  # File(...) defaults are FastAPI's idiom; the formatter wraps code, prose lines stay whole

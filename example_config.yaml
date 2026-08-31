@@ -1,0 +1,12 @@
+# Agent Slate settings. Copy this file to config.yaml beside the database —
+# ~/.local/share/agentslate/config.yaml by default, or the directory SLATE_DB
+# points at — and restart Slate. Every key is optional; these are the defaults.
+
+note_limit: 1000    # characters per day in the notes
+task_limit: 1000    # characters per day in the task log; project prefixes ride free
+task_keep: 30       # task lines shown at session start, in whole days
+summary_limit: 3000 # the notes summary
+brain_limit: 5000   # the brain
+page_limit: 5000    # any memory page — one fetch
+fetch_limit: 5000   # characters a read tool returns per call
+canvas_version_idle_seconds: 60 # same author starts a new version after this idle gap

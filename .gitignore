@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.egg-info/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+# the built frontend (frontend/ → npm run build → served by the package)
+src/agentslate/static/
+frontend/node_modules/
+frontend/dist/
+.DS_Store

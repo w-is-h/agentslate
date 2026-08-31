@@ -1,0 +1,397 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* The Radix dialog and popover primitives expose their animation state through these variants. */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+/* ===========================================================================
+   The theme. One block of raw values = one colour scheme; switching the app
+   is the class on <html> in index.html — `dark` is ink (the default), no
+   class is paper. Nothing else in the codebase holds a colour.
+
+   The --color-* aliases below give the app its vocabulary (bg / raise /
+   ink / gold / …) over the raw values; the vendored primitives in
+   components/ui read the same vocabulary, plus two surviving shadcn names
+   (popover-foreground, ring).
+   =========================================================================== */
+
+/* light — canvas / white / sand / stone neutrals */
+:root {
+  color-scheme: light;
+
+  /* Source range for every chromatic accent. Semantic slots below choose
+     from it; paper mixes the bright swatches toward ink for contrast. */
+  --palette-sparkle: #ffbb26;
+  --palette-tick: #d48f00;
+  --palette-toggle: #9f4fff;
+  --palette-success: #00c978;
+  --palette-error: #ff6b5f;
+  --palette-loading: #4f8cff;
+
+  --background: #fbfaf9;
+  --foreground: #474645;
+  --card: #ffffff;
+  --popover-foreground: #343433;
+  --primary: color-mix(in srgb, var(--palette-tick) 61%, var(--foreground));
+  --muted-foreground: #a9a7a3;
+  --accent: #f6f4ef;
+  --destructive: color-mix(in srgb, var(--palette-error) 63%, var(--foreground));
+  --border: #f2f0ed;
+  --input: rgba(18, 18, 18, .07);
+  --ring: color-mix(in srgb, var(--palette-tick) 68%, var(--foreground));
+
+  /* the app's own slots — no shadcn equivalent */
+  --dim: #7e7e7d;
+  --gold-dim: color-mix(in srgb, var(--palette-tick) 61%, var(--foreground));
+  --strong: #121212;
+  --on-accent: #fbfaf9;
+  --overlay: rgba(18, 18, 18, .34);
+  --notes: color-mix(in srgb, var(--palette-loading) 69%, var(--foreground));
+  --tasks: color-mix(in srgb, var(--palette-success) 55%, var(--foreground));
+  --plum: color-mix(in srgb, var(--palette-toggle) 68%, var(--foreground));
+  --due: color-mix(in srgb, var(--palette-tick) 61%, var(--foreground));
+  --link: color-mix(in srgb, var(--palette-toggle) 68%, var(--foreground));
+  --diff-add: color-mix(in srgb, var(--palette-success) 55%, var(--foreground));
+  --diff-del: color-mix(in srgb, var(--palette-error) 63%, var(--foreground));
+
+  --grain-blend: normal;
+  --grain-opacity: 0;
+  --pop-shadow: 0 1px 2px rgba(18, 18, 18, .03), 0 2px 6px rgba(18, 18, 18, .03), 0 32px 64px -34px rgba(18, 18, 18, .28);
+  --float-shadow: 0 1px 2px rgba(18, 18, 18, .03), 0 10px 28px -16px rgba(18, 18, 18, .14);
+}
+
+/* ink — near-black brown ground, gold accent (the house dark look) */
+.dark {
+  color-scheme: dark;
+  --background: #16130f;
+  --foreground: #fbf8f2;
+  --card: #1d1a15;
+  --popover-foreground: #fbf8f2;
+  --primary: var(--palette-sparkle);
+  --muted-foreground: #a99b7e;
+  --accent: #242019;
+  --destructive: var(--palette-error);
+  --border: #3d3628;
+  --input: #302a1f;
+  --ring: var(--palette-sparkle);
+
+  --dim: #d3c8b1;
+  --gold-dim: var(--palette-tick);
+  --strong: #ffffff;
+  --on-accent: #100b04;
+  --overlay: rgba(12, 10, 6, .65);
+  --notes: var(--palette-loading);
+  --tasks: var(--palette-success);
+  --plum: var(--palette-toggle);
+  --due: var(--palette-sparkle);
+  --link: var(--palette-toggle);
+  --diff-add: var(--palette-success);
+  --diff-del: var(--palette-error);
+
+  --grain-blend: screen;
+  --grain-opacity: .035;
+  --pop-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  --float-shadow: 0 2px 12px rgba(0, 0, 0, .45);
+}
+
+@theme inline {
+  /* the phone's edge gutter — the one knob for left/right padding on
+     every phone view */
+  --spacing-gutter: 9px;
+
+  /* the two shadcn names the vendored primitives still read */
+  --color-popover-foreground: var(--popover-foreground);
+  --color-ring: var(--ring);
+
+  /* the app's vocabulary — the raw tokens, under the names the app thinks in */
+  --color-bg: var(--background);
+  --color-raise: var(--card);
+  --color-hover: var(--accent);
+  --color-line: var(--border);
+  --color-line-soft: var(--input);
+  --color-ink: var(--foreground);
+  --color-dim: var(--dim);
+  --color-faint: var(--muted-foreground);
+  --color-gold: var(--primary);
+  --color-gold-dim: var(--gold-dim);
+  --color-strong: var(--strong);   /* brighter than ink — bold inside prose */
+  --color-on-accent: var(--on-accent); /* readable mark/text on a bright fill */
+  --color-overlay: var(--overlay); /* the wash behind a modal */
+  --color-notes: var(--notes);     /* categorical slot 1 — notes */
+  --color-tasks: var(--tasks);     /* categorical slot 2 — tasks */
+  --color-plum: var(--plum);       /* categorical slot 3 */
+  --color-overdue: var(--destructive); /* status: serious */
+  --color-due: var(--due);             /* status: warning */
+  --color-link: var(--link);           /* hyperlinks — purple, apart from gold code */
+  --color-diff-add: var(--diff-add);   /* the html editor's version diff */
+  --color-diff-del: var(--diff-del);
+
+  /* two elevations, themed: a panel that pops over the page, and a small
+     thing that floats on it */
+  --shadow-pop: var(--pop-shadow);
+  --shadow-float: var(--float-shadow);
+
+  --font-body: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-body);
+  --font-emphasis: "Instrument Serif", Georgia, serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-sans: var(--font-body);
+
+  /* one radius token, sharp; the scale derives from it */
+  --radius: .5rem;
+  --radius-sm: calc(var(--radius) * .6);
+  --radius-md: calc(var(--radius) * .8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+@layer base {
+  *, ::after, ::before { border-color: var(--color-line); }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+}
+
+/* y only: kills the scroll-past-the-end bounce; x stays auto so the
+   trackpad two-finger back/forward swipe keeps working */
+html { overscroll-behavior-y: none; }
+
+/* while a nest tile drags: iframes must not swallow the pointer stream —
+   the window would stop seeing pointermove the moment the drag crosses one
+   — and the cursor is a fist everywhere, whatever it hovers */
+body.nest-dragging iframe { pointer-events: none; }
+body.nest-moving, body.nest-moving * { cursor: grabbing !important; }
+
+/* the nest's full-screen mode (board settings): the sidebar goes, the board
+   takes the whole viewport; only the floating settings button leads back */
+body.nest-full .slate-shell { grid-template-columns: 1fr; }
+body.nest-full .slate-shell > nav { display: none; }
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font: 400 16px/1.55 var(--font-body);
+  letter-spacing: -.013em;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+:where(.font-body) { letter-spacing: -.013em; }
+:where(.font-display) { font-weight: 500; letter-spacing: -.018em; }
+:where(.font-mono) { letter-spacing: 0; }
+strong, b { font-weight: 500; }
+em {
+  font-family: var(--font-emphasis); font-size: 1.1em; font-style: italic;
+  font-weight: 400; letter-spacing: -.01em;
+}
+.font-display em, h1 em, h2 em, h3 em { color: var(--color-gold); }
+code, pre { font-weight: 400; letter-spacing: 0; }
+/* grain */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99;
+  opacity: var(--grain-opacity); mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+::selection { background: var(--color-gold-dim); color: var(--color-on-accent); }
+
+/* view entrance */
+.reveal { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes inkpulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.pulse { animation: inkpulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .pulse { animation: none; }
+}
+
+/* search-match highlight inside generated HTML */
+.hl { background: var(--color-gold-dim); color: var(--color-on-accent); border-radius: 2px; padding: 0 2px; }
+
+/* touch devices: iOS Safari auto-zooms (and stays zoomed) when a focused
+   form control's font-size is under 16px — hold every control at 16px there.
+   !important because utility classes (text-[15px]) otherwise out-rank this. */
+@media (pointer: coarse) {
+  input, textarea, select { font-size: 16px !important; }
+}
+
+/* ---- prose: styling for mdlite-generated HTML (brain, memory, file
+   views) — generated markup can't carry utility classes ---- */
+.prose { max-width: 760px; }
+.prose.wide { max-width: none; }
+.prose h2 {
+  font-family: var(--font-body); font-weight: 500; font-size: 25px; line-height: 1.12;
+  margin: 30px 0 12px; letter-spacing: -.03em; text-wrap: balance;
+}
+.prose h2:first-child { margin-top: 0; }
+.prose h3 {
+  font-family: var(--font-body); font-weight: 500; font-size: 19px; line-height: 1.12;
+  margin: 22px 0 8px; letter-spacing: -.03em; text-wrap: balance;
+}
+.prose p { margin: 0 0 14px; font-weight: 400; text-wrap: pretty; }
+.prose ul, .prose ol { margin: 0 0 14px; padding-left: 22px; }
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li { margin-bottom: 6px; font-weight: 400; text-wrap: pretty; }
+.prose li.task, .turn-md li.task { list-style: none; }
+.prose li.task input, .turn-md li.task input {
+  accent-color: var(--color-gold); width: 14px; height: 14px;
+  vertical-align: middle; margin: 0 3px 3px 0; pointer-events: none;
+}
+.prose code, .cm-lm-table code {
+  font: 400 13px/1.45 var(--font-mono); background: var(--color-bg); border: 0;
+  padding: 1px 5px; border-radius: 5px; color: var(--color-gold);
+}
+/* the inline-code treatment must not restyle fenced blocks */
+.prose pre.fence code, .turn-md pre.fence code {
+  font: inherit; background: transparent; border: 0; padding: 0;
+  border-radius: 0; color: inherit;
+}
+.prose strong, .cm-lm-table strong { font-weight: 500; color: var(--color-strong); }
+/* table styling is shared with the livemd table widget (.cm-lm-table) so a
+   table reads identically in the editor and any prose view — the widget
+   deliberately does NOT carry the prose class (max-width, block rules) */
+.prose table, .cm-lm-table table { border-collapse: collapse; margin: 0 0 14px; }
+.prose th, .cm-lm-table th {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--color-faint);
+  text-align: left; padding: 0 26px 6px 0;
+}
+.prose td, .cm-lm-table td {
+  font-size: 16px; font-weight: 400; vertical-align: top;
+  padding: 6px 26px 6px 0; border-top: 1px solid var(--color-line-soft);
+}
+.prose th:last-child, .prose td:last-child,
+.cm-lm-table th:last-child, .cm-lm-table td:last-child { padding-right: 0; }
+.prose a, .cm-lm-table a { color: var(--color-link); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--color-link) 55%, transparent); }
+.prose a:hover, .cm-lm-table a:hover { color: color-mix(in srgb, var(--color-link) 78%, var(--color-strong)); border-bottom-color: var(--color-link); }
+.prose .wikilink { color: var(--color-link); }
+.prose .wikilink[data-link], .prose .wikilink[data-path] { cursor: pointer; border-bottom: 1px dotted color-mix(in srgb, var(--color-link) 55%, transparent); }
+.prose .doc-intro {
+  font-size: 14.5px; font-style: italic; color: var(--color-faint);
+  border-left: 2px solid var(--color-line); padding-left: 14px; margin-bottom: 22px;
+}
+.prose .meta {
+  font: 12.5px/1.7 var(--font-mono); color: var(--color-faint); background: var(--color-bg);
+  border: 1px solid var(--color-line-soft); border-radius: 8px; padding: 10px 14px;
+  margin-bottom: 18px; white-space: pre-wrap;
+}
+pre.fence {
+  font: 400 12.5px/1.7 var(--font-mono); background: var(--color-bg); border: 1px solid var(--color-line-soft);
+  border-radius: 8px; padding: 10px 14px; margin: 0 0 14px;
+  overflow-x: auto; color: var(--color-dim);
+}
+
+/* markdown inside a nest tile stays compact — not .prose scale */
+.turn-md { font-family: var(--font-body); white-space: normal; }
+.turn-md p, .turn-md ul, .turn-md ol, .turn-md table { margin: 0 0 10px; text-wrap: pretty; }
+.turn-md > :last-child { margin-bottom: 0; }
+.turn-md ul { list-style: disc; padding-left: 22px; }
+.turn-md ol { list-style: decimal; padding-left: 22px; }
+.turn-md li { margin-bottom: 4px; text-wrap: pretty; }
+.turn-md code {
+  font: 400 13px/1.45 var(--font-mono); background: var(--color-bg); border: 0;
+  padding: 1px 5px; border-radius: 5px; color: var(--color-gold);
+}
+.turn-md strong { font-weight: 500; color: var(--color-strong); }
+.turn-md a { color: var(--color-link); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--color-link) 55%, transparent); }
+.turn-md h2, .turn-md h3 {
+  font-family: var(--font-body); font-size: 16px; font-weight: 500;
+  line-height: 1.12; letter-spacing: -.03em; margin: 14px 0 6px; text-wrap: balance;
+}
+.turn-md table { border-collapse: collapse; }
+.turn-md th, .turn-md td { font-size: 14px; text-align: left; padding: 3px 20px 3px 0; }
+
+/* ---- livemd: the live-preview markdown editor (components/editor/) ----
+   headings/quote/code ride line classes applied whether or not the line
+   is revealed, so a reveal never shifts layout; the scale mirrors .prose
+   so editing reads like the render. */
+.cm-lm { display: flex; flex-direction: column; }
+.cm-lm .cm-editor { flex: 1; min-height: 0; outline: none; }
+.cm-lm .cm-editor.cm-focused { outline: none; }
+.cm-lm .cm-content {
+  font-family: var(--font-body); font-size: 16px; font-weight: 400;
+  line-height: 1.65; caret-color: var(--color-gold); padding: 0;
+}
+.cm-lm .cm-line { padding: 0; }
+.cm-lm .cm-placeholder { color: var(--color-faint); }
+.cm-lm .cm-lm-h1, .cm-lm .cm-lm-h2, .cm-lm .cm-lm-h3 {
+  font-family: var(--font-body); font-weight: 500; line-height: 1.12;
+  letter-spacing: -.03em;
+}
+.cm-lm .cm-lm-h1 { font-size: 27px; padding: 10px 0 4px; }
+.cm-lm .cm-lm-h2 { font-size: 23px; padding: 8px 0 3px; }
+.cm-lm .cm-lm-h3 { font-size: 19px; padding: 6px 0 2px; }
+.cm-lm .cm-lm-h4, .cm-lm .cm-lm-h5, .cm-lm .cm-lm-h6 {
+  font-weight: 500; padding: 4px 0 2px;
+}
+.cm-lm .cm-lm-quote {
+  border-left: 2px solid var(--color-line); padding-left: 14px;
+  color: var(--color-dim);
+}
+.cm-lm .cm-lm-code {
+  font: 400 12.5px/1.7 var(--font-mono); background: var(--color-bg);
+  color: var(--color-dim); padding: 0 10px;
+}
+.cm-lm .cm-lm-strong { font-weight: 500; color: var(--color-strong); }
+.cm-lm .cm-lm-em {
+  font-family: var(--font-emphasis); font-size: 1.1em; font-style: italic;
+  font-weight: 400; letter-spacing: -.01em;
+}
+.cm-lm .cm-lm-strike { text-decoration: line-through; color: var(--color-faint); }
+.cm-lm .cm-lm-icode {
+  font: 400 13px/1.45 var(--font-mono); background: var(--color-bg);
+  border: 0; padding: 1px 4px;
+  border-radius: 5px; color: var(--color-gold);
+}
+.cm-lm .cm-lm-link {
+  color: var(--color-link);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-link) 55%, transparent);
+  cursor: pointer;
+}
+/* canvas image links, rendered small — the editor's widget and mdlite's
+   tag wear the same clothes */
+.cm-lm .cm-lm-thumb, .md-thumb {
+  display: inline-block; max-height: 110px; max-width: min(60%, 340px);
+  border-radius: 6px; vertical-align: middle; margin: 2px 0;
+}
+/* the size caps live on the WRAP — a percentage max-width on the img
+   inside a shrink-to-fit wrapper shrinks the picture but not the box,
+   stranding the button in empty air */
+.cm-lm-thumbwrap {
+  position: relative; display: inline-block; vertical-align: middle;
+  max-width: min(60%, 340px); margin: 2px 3px;
+}
+.cm-lm-thumbwrap .cm-lm-thumb {
+  display: block; margin: 0; max-width: 100%; max-height: 110px;
+}
+.cm-lm-thumbwrap .cm-lm-thumbopen {
+  position: absolute; top: 4px; right: 4px; display: flex; align-items: center;
+  justify-content: center; width: 19px; height: 19px; border-radius: 4px;
+  border: 0; cursor: pointer; background: rgba(0, 0, 0, .6); color: #fff;
+  opacity: 0; transition: opacity .15s;
+}
+.cm-lm-thumbwrap:hover .cm-lm-thumbopen { opacity: 1; }
+.cm-lm .cm-lm-olmark, .cm-lm .cm-lm-bullet { color: var(--color-gold); }
+.cm-lm .cm-lm-check {
+  accent-color: var(--color-gold); width: 14px; height: 14px;
+  vertical-align: middle; margin: 0 3px 3px 0; cursor: pointer;
+}
+.cm-lm .cm-lm-hr {
+  display: inline-block; width: 100%; height: 1px;
+  background: var(--color-line); vertical-align: middle;
+}
+.cm-lm .cm-lm-table { padding: 3px 0; }
+.cm-lm .cm-lm-table table { margin: 0; }
+.cm-lm .cm-scroller { overflow-y: auto; }
