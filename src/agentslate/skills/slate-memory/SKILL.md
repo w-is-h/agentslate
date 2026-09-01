@@ -13,7 +13,7 @@ A page explains what a project is, what took learning, and the odd thing worth k
 
 - **Purpose** — what it is, what it does, for whom: a paragraph.
 - **Catches** — what cost time once and cannot be changed: another system's behavior, hardware, a limit chosen on purpose, a small thing hard to find. A bug is fixed, never recorded; a quirk of our own code that can be fixed is fixed — memory never holds what a commit could remove.
-- **Decisions** — the big ones, with the why, dated and attributed: they explain why something is the way it is.
+- **Decisions** — only the important ones: not obvious from the code and still mattering for future work — with the why, dated and attributed. A routine call, or one the code itself makes plain, stays out.
 - **Results** — one sentence per experiment stating the outcome, linking its canvas.
 - **Tidbits** — loose bits that fit nowhere above: something fun, a stray observation, a thing that may be useful later. The bar is low — append freely, at any point in a session, and a bit of randomness is fine. Each tidbit ends with its date (`… (2026-08-31)`) so pruning is easy later; still short in size, and the first section to go when the page is trimmed.
 
