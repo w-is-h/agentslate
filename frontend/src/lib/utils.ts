@@ -33,6 +33,24 @@ export async function copyText(text: string) {
   if (!legacyCopy(text)) throw new Error("copy failed");
 }
 
+/* Phone browsers hijack a navigated-to PDF into their viewer (Chrome
+   Android's inline PDF, iOS Safari's preview) even when the server says
+   attachment; a blob behind a[download] goes through the download manager
+   everywhere. The filename comes from the server's Content-Disposition. */
+export async function downloadFile(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`download failed: ${res.status}`);
+  const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1];
+  const href = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = name ?? "slate";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
 /* Rich editors consume text/html; source editors consume text/plain. A
    Markdown canvas belongs on the clipboard as both. execCommand keeps this
    working on Slate instances served over plain HTTP, where the modern

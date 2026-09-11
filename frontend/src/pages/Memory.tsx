@@ -17,7 +17,7 @@ import { useLock } from "@/hooks/useLock";
 import { useRail } from "@/hooks/useRail";
 import LiveMd from "@/components/editor/LiveMd";
 import { Button } from "@/components/ui/button";
-import { cn, copyText } from "@/lib/utils";
+import { cn, copyText, downloadFile } from "@/lib/utils";
 import {
   buildMemoryTree, countPages, findMemoryNode, memoryTitle, parentPath, resolveMemoryPath,
   type MemoryNode,
@@ -262,7 +262,7 @@ export default function Memory() {
                 {copied ? <Check className="size-4 text-gold" /> : <Copy className="size-4" />}
               </Button>
               <Button variant="ghost" size="icon-sm" title="export pdf" className="size-8"
-                      onClick={() => location.assign(`/api/memory/pdf?path=${encodeURIComponent(path)}`)}>
+                      onClick={() => void downloadFile(`/api/memory/pdf?path=${encodeURIComponent(path)}`)}>
                 <span className="font-mono text-[10px] font-medium tracking-[.06em]">PDF</span>
               </Button>
               <Button variant="ghost" size="icon-sm" onClick={nuke}

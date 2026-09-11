@@ -15,7 +15,7 @@ import { LockButton, RawHtml } from "@/components/bits";
 import LiveMd from "@/components/editor/LiveMd";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn, copyRichText, copyText } from "@/lib/utils";
+import { cn, copyRichText, copyText, downloadFile } from "@/lib/utils";
 
 function HeadBtn({ title, active, disabled, onClick, children }: {
   title: string; active?: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode;
@@ -138,10 +138,10 @@ export function CanvasView({ doc, page = false, wide, onWide, onClose, onDeleted
             {copied ? <Check className="size-4 text-gold" /> : <Copy className="size-4" />}
           </HeadBtn>
           {/* no honest pdf/md glyphs in the icon set — mono text labels */}
-          <HeadBtn title="export pdf" onClick={() => location.assign(`/api/canvas/pdf?id=${doc.id}`)}>
+          <HeadBtn title="export pdf" onClick={() => void downloadFile(`/api/canvas/pdf?id=${doc.id}`)}>
             <span className="font-mono text-[10px] font-medium tracking-[.06em]">PDF</span>
           </HeadBtn>
-          <HeadBtn title="export markdown" onClick={() => location.assign(`/api/canvas/md?id=${doc.id}`)}>
+          <HeadBtn title="export markdown" onClick={() => void downloadFile(`/api/canvas/md?id=${doc.id}`)}>
             <span className="font-mono text-[10px] font-medium tracking-[.06em]">MD</span>
           </HeadBtn>
           <HeadBtn title={armed ? "click again — deletes every version" : "delete canvas"}

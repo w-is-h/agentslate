@@ -10,7 +10,7 @@ import LiveMd from "@/components/editor/LiveMd";
 import { Button } from "@/components/ui/button";
 import { useDraft } from "@/hooks/useDraft";
 import { useLock } from "@/hooks/useLock";
-import { cn, copyText } from "@/lib/utils";
+import { cn, copyText, downloadFile } from "@/lib/utils";
 
 export default function Brain() {
   const { data } = useDash();
@@ -41,7 +41,7 @@ export default function Brain() {
             {copied ? <Check className="size-4 text-gold" /> : <Copy className="size-4" />}
           </Button>
           <Button variant="ghost" size="icon-sm" title="export pdf" className="size-8"
-                  onClick={() => location.assign("/api/brain/pdf")}>
+                  onClick={() => void downloadFile("/api/brain/pdf")}>
             <span className="font-mono text-[10px] font-medium tracking-[.06em]">PDF</span>
           </Button>
         </span>
