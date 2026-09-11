@@ -55,7 +55,8 @@ app.mount("/", mcp_app)  # last: it serves /mcp and nothing else
 def serve(host, port):
     from . import mcp as mcp_module
 
-    mcp_module.SERVER_URL = f"http://{host}:{port}"
+    # behind a proxy the bound address is not the one anyone else can reach
+    mcp_module.SERVER_URL = os.environ.get("SLATE_URL", f"http://{host}:{port}").rstrip("/")
     print(f"slate: http://{host}:{port}  (mcp at /mcp; ctrl-c to stop)")
     try:
         # MCP clients hold a GET stream open indefinitely; without a bound,

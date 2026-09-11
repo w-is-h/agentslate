@@ -5,27 +5,34 @@
 # native commands, and turn Codex's own memories off (slate is the memory).
 #
 #   hooks/codex.sh http://myhost:8750
+#   hooks/codex.sh https://slate.example.com <token>   behind an authenticating proxy
 #
 # Idempotent: re-run with a new URL to repoint. Other hooks in
 # ~/.codex/hooks.json are left alone.
 set -euo pipefail
 
-URL="${1:?usage: hooks/codex.sh http://host:port}"
+URL="${1:?usage: hooks/codex.sh http://host:port [token]}"
 URL="${URL%/}"
+TOKEN="${2:-}"   # only when a proxy in front of slate asks for a bearer token
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
 if command -v codex >/dev/null; then
   codex mcp remove slate >/dev/null 2>&1 || true
-  codex mcp add slate --url "$URL/mcp"
+  if [ -n "$TOKEN" ]; then
+    # codex reads the token from the environment at run time, not from its config
+    codex mcp add slate --url "$URL/mcp" --bearer-token-env-var SLATE_TOKEN
+  else
+    codex mcp add slate --url "$URL/mcp"
+  fi
 else
   echo "codex not on PATH — register the server yourself:"
-  echo "  codex mcp add slate --url $URL/mcp"
+  echo "  codex mcp add slate --url $URL/mcp${TOKEN:+ --bearer-token-env-var SLATE_TOKEN}"
 fi
 
-python3 - "$URL" "$HERE/session-start.py" <<'PY'
+python3 - "$URL" "$HERE/session-start.py" "$TOKEN" <<'PY'
 import json, os, sys
 
-url, script = sys.argv[1], sys.argv[2]
+url, script, token = sys.argv[1], sys.argv[2], sys.argv[3]
 path = os.path.expanduser("~/.codex/hooks.json")
 try:
     with open(path) as f:
@@ -37,7 +44,8 @@ hooks = cfg.setdefault("hooks", {})
 start = [h for h in hooks.get("SessionStart", [])
          if not any("hooks/session-start.py" in x.get("command", "") for x in h.get("hooks", []))]
 start.append({"matcher": "startup|resume|clear|compact",
-              "hooks": [{"type": "command", "command": f"python3 {script} {url}",
+              "hooks": [{"type": "command",
+                         "command": f"python3 {script} {url}" + (f" --token {token}" if token else ""),
                          "statusMessage": "Loading slate", "additionalContextLimit": 40000,
                          "timeout": 30}]})
 hooks["SessionStart"] = start
@@ -93,5 +101,12 @@ echo "one manual step: the habits ride in your rules file (a skill only loads"
 echo "when its trigger fires). Add this to ~/.codex/AGENTS.md, if not already there:"
 echo
 sed -n '/^```markdown$/,/^```$/p' "$HERE/../README.md" | sed '1d;$d'
+echo
+if [ -n "$TOKEN" ]; then
+  echo
+  echo "one more: codex reads the bearer token from the environment — put"
+  echo "  export SLATE_TOKEN=$TOKEN"
+  echo "in your shell profile, or codex will reach slate without it."
+fi
 echo
 echo "done — add the snippet, then open a new codex session; the bundle arrives at start."

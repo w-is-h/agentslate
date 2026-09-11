@@ -51,6 +51,8 @@ systemctl --user enable --now agentslate.service
 On a machine nobody stays logged into, also run `loginctl enable-linger` once — a user service otherwise starts only at login, not at boot.
 
 > **Security:** Slate has no authentication; the address it binds to is its security boundary. Keep it inside your network or your company's — a VPN address is reachable only from that network. Never bind Slate to a public interface.
+>
+> An agent that cannot join your network at all is the one exception, and it is handled by publishing `/mcp` alone behind a token — the optional step below. Slate itself still binds a private address.
 
 ### 2. Wire each agent machine
 
@@ -89,6 +91,16 @@ Agent Slate (the `slate` MCP server) is the state we share; it arrives in your c
 The session starts with the shared context loaded: recent tasks, the storyline, the brain, and the memory for this machine and project. The agent reads and updates Slate through its MCP tools while the same state stays visible in your browser.
 
 New here? Ask the agent for a tour — it loads the built-in `slate-tutorial` skill and walks you through Slate one step at a time.
+
+### Optional: agents that cannot join the network
+
+Skip this unless you need it — the five steps above are the whole setup, and they leave Slate unreachable from the internet.
+
+The test is one question: can every machine you run an agent on join your private network? A laptop, a workstation, a VM on the same VPN — all yes, and there is nothing to do here. But an agent in a cloud sandbox, a CI runner, or a hosted harness has no way onto your network, and its `/mcp` has to come from the internet.
+
+Nothing in the setup above changes. You put a reverse proxy in front of Slate that publishes `/mcp` alone — on a domain you own, and only to requests carrying a bearer token — while the web UI and `/api` stay on the private network where they need no token. `deploy/` holds the files; [Public MCP, private dashboard](docs/setup.md#public-mcp-private-dashboard) has the steps.
+
+Decide it knowing what the token is worth: `/mcp` is every tool Slate has, so whoever holds it can read and rewrite the whole memory and brain. A machine that could join the network belongs on the network.
 
 Other cases — Slate on one machine only, another MCP client, a custom data location, limits, backups — are in [Beyond the quick start](docs/setup.md).
 

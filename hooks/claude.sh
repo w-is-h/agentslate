@@ -6,27 +6,34 @@
 # (slate is the memory).
 #
 #   hooks/claude.sh http://myhost:8750
+#   hooks/claude.sh https://slate.example.com <token>   behind an authenticating proxy
 #
 # Idempotent: re-run with a new URL to repoint. Anything else in
 # ~/.claude/settings.json is left alone.
 set -euo pipefail
 
-URL="${1:?usage: hooks/claude.sh http://host:port}"
+URL="${1:?usage: hooks/claude.sh http://host:port [token]}"
 URL="${URL%/}"
+TOKEN="${2:-}"   # only when a proxy in front of slate asks for a bearer token
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
 if command -v claude >/dev/null; then
   claude mcp remove --scope user slate >/dev/null 2>&1 || true
-  claude mcp add --transport http --scope user slate "$URL/mcp"
+  if [ -n "$TOKEN" ]; then
+    claude mcp add --transport http --scope user slate "$URL/mcp" --header "Authorization: Bearer $TOKEN"
+  else
+    claude mcp add --transport http --scope user slate "$URL/mcp"
+  fi
 else
   echo "claude not on PATH — register the server yourself:"
-  echo "  claude mcp add --transport http --scope user slate $URL/mcp"
+  echo "  claude mcp add --transport http --scope user slate $URL/mcp${TOKEN:+ --header \"Authorization: Bearer $TOKEN\"}"
 fi
 
-python3 - "$URL" <<'PY'
+python3 - "$URL" "$TOKEN" <<'PY'
 import json, os, sys
 
-url = sys.argv[1]
+url, token = sys.argv[1], sys.argv[2]
+auth = f' -H "Authorization: Bearer {token}"' if token else ""
 path = os.path.expanduser("~/.claude/settings.json")
 try:
     with open(path) as f:
@@ -35,7 +42,7 @@ except FileNotFoundError:
     cfg = {}
 
 TAG = "# slate"
-curl = f'curl -fsS -m 10 "{url}/hook/session-start?part=%s"'
+curl = f'curl -fsS -m 10{auth} "{url}/hook/session-start?part=%s"'
 # the tasks part reports an unreachable slate; the rest stay silent (a
 # failing hook command is shown to the user as an error)
 cmds = [
@@ -44,7 +51,7 @@ cmds = [
     (curl % "tasks") + " || echo '[slate unreachable — no shared state this session]'",
     (curl % "notes") + " || true",
     (curl % "brain") + " || true",
-    f'curl -fsS -m 10 -G --data-urlencode "path=$PWD" --data-urlencode "host=$(hostname -s)" '
+    f'curl -fsS -m 10{auth} -G --data-urlencode "path=$PWD" --data-urlencode "host=$(hostname -s)" '
     f'"{url}/hook/session-start?part=machine" || true',
     # an ssh-alias remote (git@github-x:o/r) hides the web host — resolve
     # the alias through ssh -G so the server can learn the repo's host
@@ -52,7 +59,7 @@ cmds = [
     'case $r in *://*) ;; *:*) a=${r%%:*}; a=${a#*@}; '
     "case $a in *.*) ;; *) n=$(ssh -G \"$a\" 2>/dev/null | awk '/^hostname /{print $2}'); "
     '[ -n "$n" ] && [ "$n" != "$a" ] && r="git@$n:${r#*:}"; esac; esac; '
-    f'curl -fsS -m 10 -G --data-urlencode "path=$PWD" --data-urlencode "repo=$r" '
+    f'curl -fsS -m 10{auth} -G --data-urlencode "path=$PWD" --data-urlencode "repo=$r" '
     f'"{url}/hook/session-start?part=project" || true',
 ]
 hooks = cfg.setdefault("hooks", {})
