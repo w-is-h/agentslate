@@ -71,6 +71,10 @@ export const freezePlugin = ViewPlugin.fromClass(
 
     private readonly onDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
+      // read-only: nothing reveals, and the thaw dispatch would make CM
+      // sync the DOM selection — wiping a native drag-selection (a table
+      // cell) right after mouseup
+      if (this.view.state.readOnly) return;
       const t = e.target;
       if (!(t instanceof Node) || !this.view.contentDOM.contains(t)) return;
       this.down = true;

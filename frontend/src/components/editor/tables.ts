@@ -38,6 +38,7 @@ class TableWidget extends WidgetType {
     el.innerHTML = mdlite(this.src);
     // click a row → cursor lands on that row's source line, revealing it
     el.addEventListener("mousedown", e => {
+      if (view.state.readOnly) return; // locked: native selection (copy a cell, a row)
       e.preventDefault();
       const from = view.posAtDOM(el);
       if (from < 0) return;
