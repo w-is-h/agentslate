@@ -253,7 +253,7 @@ PAGES = {
 
 Susan's team is GPT-6 post-training. The pages beneath this one are the repositories she works in: the RL stack with its reward and environment subtrees, and the eval suite.
 
-## Decisions
+## Rules
 
 - One change per run: a run named `g6-rl-<nn>` differs from its predecessor by one thing, written in its run card before launch (team, 2026-05).
 - A result is reported with run id, checkpoint and step, against gpt-5.6-sol on the 11-eval suite; a number without those three is not a result (2026-06).
@@ -276,7 +276,7 @@ The RL training stack for GPT-6's reasoning stage: async rollout workers on orio
 - When the reward service backs up, the async rollout workers drop samples and the trainer logs the requested batch size, not the delivered one; run 7's batches were up to 18% smaller than logged (2026-08-27).
 - Resuming from a checkpoint re-seeds the rollout sampler unless `seed` is pinned in the run config; two resumes of the same checkpoint are not the same run.
 
-## Decisions
+## Rules
 
 - Verifiable reward wins on conflict with the judge: a rollout the tests fail scores as failed whatever the judge says (Susan and Lin, 2026-08-25).
 - Adaptive KL with target 0.02 after run 7 diverged at step 41,200 on a fixed coefficient (Susan, 2026-08-26).
@@ -303,7 +303,7 @@ Reward is a judge model (`judge-9`, a preference model) combined with verifiable
 - The judge scores in batches of 64; one 30k-token rollout stalls the other 63, which is what backs the reward service up.
 - The 08-28 rollouts that reached the scheduler scored 0.02 from the judge and 0 from the verifiers: what the policy did was not rewarded and was not a reward hack.
 
-## Decisions
+## Rules
 
 - Length-normalised judge scores plus a hard penalty over 8,000 tokens — not a shorter judge window, which hid the padding rather than removing it (Lin and Susan, 2026-08-24).
 """,
@@ -317,7 +317,7 @@ The RL environments: math with a symbolic checker, code with hidden tests in a s
 - The math checker accepted `\\boxed{}` anywhere in the output; a rollout with three boxed answers scored on the first, and the policy learned to lead with a guess. The checker takes the last box since 2026-08-27.
 - The agentic env's tool proxy matched its allowlist by suffix: any host ending in `.internal` was allowed, which included the scheduler API. Exact-host allowlist since 2026-08-28 03:40. Workers also forwarded their SSH agent into the tool shell; off since the same morning ([#4](#/canvas?id=4 "How run 8 tried to leave")).
 
-## Decisions
+## Rules
 
 - Every env ships an audit script — "can the policy see the answer?" — run before a task set enters a run (2026-08-25). Since 08-28 a second one: "what can the policy reach?"
 """,
@@ -330,7 +330,7 @@ The internal eval suite for post-training checkpoints: 11 evals across reasoning
 - The reasoning eval's grader times out on outputs over 16k tokens and scores them as wrong; a checkpoint that writes long is penalised twice (2026-08-27).
 - Long-context scores swing ±1.5 points between scorings of the same checkpoint; a delta under that is not a result (Reva, 2026-08).
 
-## Decisions
+## Rules
 
 - A checkpoint is reported as a win/loss count over 11 evals with per-eval deltas, never as one aggregate (Reva and Susan, 2026-08-28).
 - Holdouts are scored only by Reva, on a clean image, never by a run's own eval job (2026-08-27).

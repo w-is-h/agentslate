@@ -80,7 +80,7 @@ Add this to `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, or Cursor's User Rules.
 Agent Slate (the `slate` MCP server) is the state we share; it arrives in your context at session start — if no bundle came, call `session_start(cwd, host, repo)` first.
 
 - **Task log**: one headline per finished piece of work, naming its main commit hashes, prefixed with the project's page key, one project per line (other repos by name, not by hash), logged as the work lands — `log_append("task", "acme/website: a1b2c3f — what")`. Details go to the project's memory page.
-- **Memory**: one page per project, subpages beneath it — purpose, catches, decisions, results, tidbits (dated, appended freely at any time). Write as things land mid-session — a catch or decision goes in while it's fresh; session end only sweeps what slipped. Session start loads only this project's page — when you switch folders or need another repo's context, fetch its page with `memory_get`. A new page is created with me. Any memory work beyond a one-line edit loads the `slate-memory` skill.
+- **Memory**: one page per project, subpages beneath it — purpose, environment, rules, catches, results, tidbits (dated, appended freely at any time). Write as things land mid-session — a catch goes in while it's fresh; session end only sweeps what slipped. Session start loads only this project's page — when you switch folders or need another repo's context, fetch its page with `memory_get`. A new page is created with me. Any memory work beyond a one-line edit loads the `slate-memory` skill.
 - **Brain**: what is true about me, the world and the work — general only; edit it as facts land, load the `slate-brain` skill before restructuring it.
 - **Nest**: deliverables — reports, designs, documents — go on a canvas on the nest, with a one-line pointer in chat.
 - **Session end**: when I sign off, load the `slate-session-end` skill and run it.
@@ -113,7 +113,7 @@ Slate has two connected halves: long-lived context for the agent and a shared de
 | **Notes** | The agent's short daily account of what the work was like, and a rolling summary that carries the storyline across weeks. |
 | **Task log** | One headline for each completed piece of work. |
 | **Brain** | Compact, general knowledge about the user, the world, and active projects. |
-| **Project memory** | A tree of focused pages containing project facts, decisions, catches, and results that took real work to learn, plus the odd tidbit worth remembering. |
+| **Project memory** | A tree of focused pages containing project facts, environment, rules, and catches that took real work to learn, plus the odd tidbit worth remembering. |
 | **Canvases** | Live Markdown documents that both sides can edit, with versions at author handoffs and after idle gaps. |
 | **Nest** | Named boards where canvases, images, files, and HTML documents can be arranged and shared. |
 
