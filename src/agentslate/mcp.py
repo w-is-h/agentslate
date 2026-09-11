@@ -37,7 +37,7 @@ What lives here:
 - notes: one entry per day, at most {store.NOTE_LIMIT} chars — a story of the day, written at session end (`slate-notes` skill). The summary (summary_get / summary_set, {store.SUMMARY_LIMIT} chars) is the storyline, folded at session end (`slate-storyline` skill).
 - tasks: headlines only; a day holds {store.TASK_LIMIT} chars, prefixes excluded.
 - brain: what is true — the user, the world, where the work stands; general only, at most {store.BRAIN_LIMIT:,} chars; project detail goes to memory. Prefer brain_edit; the `slate-brain` skill before restructuring.
-- memory: a tree of pages. A project's page is keyed by its repository's path on its host (`acme/website`), a project outside git by its folder name, subpages beneath (`acme/website/deploy`). A page holds purpose, environment, rules, catches, results and tidbits (dated, appended freely) — never what the repo or its docs answer. A new page is created with the user; the `slate-memory` skill beyond a one-line edit.
+- memory: a tree of pages. A project's page is keyed by its repository's path on its host (`acme/website`), a project outside git by its folder name, subpages beneath it. A page holds the sections its project needs — typically purpose, environment, rules, catches, results, tidbits — never what the repo or its docs answer. A new page is created with the user; the `slate-memory` skill beyond a one-line edit.
 - canvases and the nest: live documents the user edits in the UI; named boards of widgets (canvases, images, html, files).
 - search covers everything above."""
 

@@ -9,7 +9,7 @@ Memory has two readers: the future session that opens this project and needs to 
 
 ## What belongs, what stays out
 
-Six kinds of line, nothing else:
+The two jobs are the invariant; the sections are not. What follows is a suggested vocabulary — the shapes most projects need. A project keeps the sections that serve it and skips the rest, and a project type that needs a section not listed here adds it — held to the same tests: it serves one of the two jobs, it is never a log, and nothing the repo or its docs answer goes in.
 
 - **Purpose** — what it is, what it does, for whom: a paragraph. The one section where repeating the README is fine — fast orientation beats deduplication.
 - **Environment** — where the project runs, at a glance: machine, port, service unit, database location. As thin as it reads — one line per deployment, and almost always there is one. This is the spec's only sanctioned duplication, and it is paired: the inventory of record is the machine page — anything that starts running on a machine gets its row under `machines/<host>` — and this line only mirrors it. The two move together, in the same pass: a deployment added, changed, or retired updates both, and a missing counterpart is created. For any further fact the test is literal: could it only be discovered by probing a machine, never by reading the repo? Config values, launch recipes, and code architecture are in the repo and stay out.
