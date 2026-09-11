@@ -10,3 +10,6 @@ src/agentslate/static/
 frontend/node_modules/
 frontend/dist/
 .DS_Store
+
+# a filled-in env file belongs on the server, not in the repo
+slate.env

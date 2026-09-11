@@ -8,7 +8,9 @@ USAGE = """slate — shared state for you and your agent
                                       default 127.0.0.1:8750; bind your VPN
                                       address to reach it from other machines
   SLATE_DB=path                       the sqlite file (default
-                                      ~/.local/share/agentslate/slate.db)"""
+                                      ~/.local/share/agentslate/slate.db)
+  SLATE_URL=url                       the address others reach slate at, when
+                                      that is not the bound one (behind a proxy)"""
 
 
 def arg(argv, flag, default, cast=str):

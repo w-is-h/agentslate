@@ -4,6 +4,9 @@
   session-start.py http://host:port          plain text on stdout (Codex)
   session-start.py http://host:port --json   {"additional_context": ...} (Cursor)
 
+--token T sends `Authorization: Bearer T`, for a slate behind a proxy that
+asks for one.
+
 The harness's hook input arrives on stdin; the working directory is taken
 from it (Codex: cwd, Cursor: workspace_roots[0]), its git remote from git.
 """
@@ -18,6 +21,7 @@ from datetime import datetime
 
 url = sys.argv[1].rstrip("/")
 as_json = "--json" in sys.argv[2:]
+token = sys.argv[sys.argv.index("--token") + 1] if "--token" in sys.argv[2:] else ""
 try:
     stdin = json.load(sys.stdin)
 except Exception:
@@ -50,8 +54,11 @@ if repo and "://" not in repo and ":" in repo:
 
 def fetch(part, **params):
     q = urllib.parse.urlencode({"part": part, **params})
+    req = urllib.request.Request(f"{url}/hook/session-start?{q}")
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
     try:
-        with urllib.request.urlopen(f"{url}/hook/session-start?{q}", timeout=10) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             return r.read().decode().strip()
     except Exception:
         return ""

@@ -5,19 +5,21 @@
 # link the skills in as native skills.
 #
 #   hooks/cursor.sh http://myhost:8750
+#   hooks/cursor.sh https://slate.example.com <token>   behind an authenticating proxy
 #
 # Idempotent: re-run with a new URL to repoint. Other servers in mcp.json
 # and other hooks in hooks.json are left alone.
 set -euo pipefail
 
-URL="${1:?usage: hooks/cursor.sh http://host:port}"
+URL="${1:?usage: hooks/cursor.sh http://host:port [token]}"
 URL="${URL%/}"
+TOKEN="${2:-}"   # only when a proxy in front of slate asks for a bearer token
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
-python3 - "$URL" "$HERE/session-start.py" <<'PY'
+python3 - "$URL" "$HERE/session-start.py" "$TOKEN" <<'PY'
 import json, os, sys
 
-url, script = sys.argv[1], sys.argv[2]
+url, script, token = sys.argv[1], sys.argv[2], sys.argv[3]
 
 
 def load(path, default):
@@ -37,7 +39,10 @@ def save(path, cfg):
 
 path = os.path.expanduser("~/.cursor/mcp.json")
 cfg = load(path, {})
-cfg.setdefault("mcpServers", {})["slate"] = {"url": f"{url}/mcp"}
+server = {"url": f"{url}/mcp"}
+if token:
+    server["headers"] = {"Authorization": f"Bearer {token}"}
+cfg.setdefault("mcpServers", {})["slate"] = server
 save(path, cfg)
 print(f"MCP server slate → {path}")
 
@@ -45,7 +50,8 @@ path = os.path.expanduser("~/.cursor/hooks.json")
 cfg = load(path, {"version": 1, "hooks": {}})
 hooks = cfg.setdefault("hooks", {})
 start = [h for h in hooks.get("sessionStart", []) if "hooks/session-start.py" not in h.get("command", "")]
-start.append({"command": f"python3 {script} {url} --json", "timeout": 30})
+start.append({"command": f"python3 {script} {url} --json" + (f" --token {token}" if token else ""),
+              "timeout": 30})
 hooks["sessionStart"] = start
 save(path, cfg)
 print(f"sessionStart hook → {path}")

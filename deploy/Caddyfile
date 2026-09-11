@@ -1,0 +1,29 @@
+# Agent Slate behind a reverse proxy: the dashboard on the private network,
+# /mcp on the internet with a bearer token. Every value comes from the
+# environment — see slate.env.example — and is substituted when Caddy loads
+# this file, so the service needs the env file (caddy.service.d/slate.conf).
+#
+#   /etc/caddy/Caddyfile
+
+# The private network: the dashboard, /api and /mcp, no token. Binding the
+# private address is what keeps this listener off the internet.
+:{$SLATE_PORT:8750} {
+	bind {$SLATE_PRIVATE_IP}
+	reverse_proxy {$SLATE_UPSTREAM:127.0.0.1:8750}
+}
+
+# The internet: two paths, and only with the token.
+{$SLATE_DOMAIN} {
+	@agent {
+		path /mcp /mcp/* /hook/session-start
+		header Authorization "Bearer {$SLATE_TOKEN}"
+	}
+	handle @agent {
+		reverse_proxy {$SLATE_UPSTREAM:127.0.0.1:8750} {
+			flush_interval -1 # an MCP client holds a stream open; never buffer it
+		}
+	}
+	handle {
+		respond 404 # everything else, token or not
+	}
+}
