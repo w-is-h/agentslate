@@ -1,5 +1,8 @@
 """Board routes: the read side plus the user's own actions — add from the
-plus cell, upload, move/resize, remove, grid size, boards."""
+plus cell, upload, move/resize, remove, grid size, boards. The global lock
+never touches the board — placing, moving, hiding and board settings stay
+live while it is on; only a document's content (html edit, copy, restore,
+delete) goes through the guarded connection."""
 
 import mimetypes
 import os
@@ -192,7 +195,7 @@ class NestAdd(BaseModel):
 
 @router.post("/api/nest/add")
 def nest_add(req: NestAdd):
-    db = writable()
+    db = connect()
     if store.nest_fit(db, req.board, req.col, req.row):
         return JSONResponse(status_code=409, content={"error": "cell occupied"})
     if req.html or req.html_id:
@@ -237,7 +240,7 @@ async def nest_upload(
     one write MCP can't carry: tool arguments travel through the model, so
     file bytes come here instead). col=row=0 takes the first free cell;
     all images make a gallery, any other mix a file card."""
-    db = writable()
+    db = connect()
     author = "agent" if author == "agent" else "user"
     if not col and not row:
         spot = store.nest_free_cell(db, board)
@@ -276,7 +279,7 @@ class Resize(BaseModel):
 @router.post("/api/nest/resize")
 def nest_resize(req: Resize):
     """A drag — move or edge resize; the widget lands on top of the stack."""
-    db = writable()
+    db = connect()
     wg = store.nest_get(db, req.id)
     if not wg:
         return JSONResponse(status_code=404, content={"error": "no such widget"})
@@ -291,7 +294,7 @@ def nest_resize(req: Resize):
 
 @router.post("/api/nest/rm")
 def nest_rm(req: ItemId):
-    store.nest_rm(writable(), req.id)
+    store.nest_rm(connect(), req.id)
     return {"ok": True}
 
 
@@ -304,7 +307,7 @@ class Grid(BaseModel):
 @router.post("/api/nest/grid")
 def nest_grid(req: Grid):
     """Resize the board; widgets that no longer fit are removed."""
-    db = writable()
+    db = connect()
     try:
         store.nest_set_size(db, req.board, req.cols, req.rows)
     except ValueError as e:
@@ -321,14 +324,14 @@ class Board(BaseModel):
 
 @router.post("/api/nest/clear")
 def nest_clear(req: Board):
-    store.nest_clear(writable(), req.name)
+    store.nest_clear(connect(), req.name)
     return {"ok": True}
 
 
 @router.post("/api/nest/board")
 def nest_board(req: Board):
     try:
-        store.nest_ensure_board(writable(), req.name)
+        store.nest_ensure_board(connect(), req.name)
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
     return {"ok": True}
@@ -342,7 +345,7 @@ class BoardRename(BaseModel):
 @router.post("/api/nest/board/rename")
 def nest_board_rename(req: BoardRename):
     try:
-        store.nest_rename_board(writable(), req.old, req.new)
+        store.nest_rename_board(connect(), req.old, req.new)
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
     return {"ok": True}
@@ -351,7 +354,7 @@ def nest_board_rename(req: BoardRename):
 @router.post("/api/nest/board/rm")
 def nest_board_rm(req: Board):
     try:
-        store.nest_drop_board(writable(), req.name)
+        store.nest_drop_board(connect(), req.name)
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
     return {"ok": True}

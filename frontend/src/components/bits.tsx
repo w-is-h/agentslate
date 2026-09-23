@@ -14,7 +14,7 @@ export function LockButton() {
   const { locked, toggle } = useLock();
   return (
     <Button variant="ghost" size="icon-sm" onClick={toggle} className="size-8"
-            title={locked ? "unlock — everything editable" : "lock — read-only everywhere"}>
+            title={locked ? "unlock — canvases and pages editable" : "lock — canvases and pages read-only"}>
       {locked ? <Lock className="size-4 text-gold" /> : <LockOpen className="size-4" />}
     </Button>
   );

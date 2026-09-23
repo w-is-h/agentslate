@@ -7,7 +7,10 @@
    other: whatever a moved or grown rect covers hides and reappears when
    uncovered. Canvas tiles are live version chains edited in place; every
    widget names who placed it. The nest is many named boards; which one a
-   tab shows rides in its URL (?b=name), so tabs never sync. */
+   tab shows rides in its URL (?b=name), so tabs never sync. The global
+   lock never touches the board: place, move, resize, hide and settings
+   stay live while it is on — only a canvas tile's content goes
+   read-only. */
 
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -86,14 +89,12 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
   overlayHead?: boolean; // html: hover drag bar above its full-size frame
   head: ReactNode; footer?: ReactNode; children: ReactNode;
 }) {
-  const { locked } = useLock();
   const [preview, setPreview] = useState<Rect | null>(null);
   const ref = useRef<HTMLElement>(null);
   const moved = useRef(false); // a real drag must not fire the link under it
   const rect = preview ?? { col: w.col, row: w.row, w: w.w, h: w.h };
   const drag = (e: React.PointerEvent, apply: (sp: Rect, dx: number, dy: number) => Rect,
                 moving = false) => {
-    if (locked) return;
     e.preventDefault();
     e.stopPropagation();
     const b = ref.current!.getBoundingClientRect();
@@ -190,13 +191,13 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
           contentGrab: pointerdown anywhere here drags the tile; the click
           guard eats the click only after real movement, so clean clicks
           still open galleries */}
-      <div onPointerDown={contentGrab && !locked ? grab : undefined}
-           onClickCapture={contentGrab && !locked ? clickGuard : undefined}
+      <div onPointerDown={contentGrab ? grab : undefined}
+           onClickCapture={contentGrab ? clickGuard : undefined}
            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[5px]">
         {children}
       </div>
       {/* hover chrome overlays the content and never takes layout space */}
-      {onHide && !locked && (
+      {onHide && (
         <button title="hide from the nest" onClick={onHide}
                 className={cn("absolute top-1.5 right-1.5 flex size-6 cursor-pointer items-center",
                                 overlayHead ? "z-[60]" : "z-20",
@@ -207,9 +208,8 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
       )}
       {/* head stripe: a full-width shaded band across the tile's top,
           revealed only while the pointer is over it. pr clears the × */}
-      <div onPointerDown={locked ? undefined : grab} onClickCapture={locked ? undefined : clickGuard}
-           className={cn("absolute inset-x-0 top-0 flex items-center rounded-t-md",
-                           locked ? "cursor-default" : "cursor-grab",
+      <div onPointerDown={grab} onClickCapture={clickGuard}
+           className={cn("absolute inset-x-0 top-0 flex cursor-grab items-center rounded-t-md",
                            overlayHead ? "z-50" : "z-10",
                            "bg-raise/90 px-3 py-1.5 pr-9 backdrop-blur-sm",
                            "transition-opacity active:cursor-grabbing",
@@ -219,9 +219,8 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
       {/* foot strip: transparent, on tile hover — the shade lives on the
           pill around the placer text, bottom right */}
       {footer && (
-        <div onPointerDown={locked ? undefined : grab} onClickCapture={locked ? undefined : clickGuard}
-             className={cn("absolute inset-x-0 bottom-0 z-10 flex items-center justify-end px-2 pb-1.5",
-                             locked ? "cursor-default" : "cursor-grab",
+        <div onPointerDown={grab} onClickCapture={clickGuard}
+             className={cn("absolute inset-x-0 bottom-0 z-10 flex cursor-grab items-center justify-end px-2 pb-1.5",
                              "transition-opacity active:cursor-grabbing",
                              preview ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
           {footer}
@@ -230,7 +229,6 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
       {/* resize hitboxes: 20px — 14 inside the tile plus 6 hanging into the
           grid gap (neighbours split the 12px evenly)
           — showing a slim gold line at the true edge */}
-      {!locked && <>
       <div onPointerDown={e => resize(e, "e")} title="resize"
            className="group/rz absolute top-0 -right-1.5 z-20 h-full w-5 cursor-ew-resize">
         <div className="absolute inset-y-0 right-1.5 w-1 opacity-0 transition-opacity group-hover/rz:opacity-100 group-hover/rz:bg-gold/45" />
@@ -260,7 +258,6 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
                                "group-hover/rz:bg-gold/45 group-hover/rz:opacity-100", dot)} />
         </div>
       ))}
-      </>}
     </section>
   );
 }
@@ -441,7 +438,6 @@ export default function Nest() {
   // nowhere else — two tabs sit on two boards, and nothing on the server
   // remembers what was open
   const [params, setParams] = useSearchParams();
-  const { locked } = useLock();
   const name = params.get("b") || "main";
   const open = (n: string) => setParams(n === "main" ? {} : { b: n });
   const [board, setBoard] = useState<{
@@ -478,11 +474,9 @@ export default function Nest() {
   boardRef.current = board;
   const addingRef = useRef(adding);
   addingRef.current = adding;
-  const lockedRef = useRef(locked);
-  lockedRef.current = locked;
   useEffect(() => {
     const h = (e: ClipboardEvent) => {
-      if (addingRef.current || lockedRef.current) return;
+      if (addingRef.current) return;
       const el = document.activeElement as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA)$/.test(el.tagName))) return;
       const fs = [...(e.clipboardData?.items || [])].filter(i => i.kind === "file")
@@ -530,7 +524,7 @@ export default function Nest() {
               ? <HtmlWidget key={w.id} {...props} onChanged={load} />
               : <FileWidget key={w.id} {...props} />;
       })}
-      {!locked && empty.map(c => adding && adding.col === c.col && adding.row === c.row ? (
+      {empty.map(c => adding && adding.col === c.col && adding.row === c.row ? (
         <AddPanel key={`a${c.col},${c.row}`} col={c.col} row={c.row} board={board.board}
                   onClose={() => setAdding(null)} onAdded={done} />
       ) : (
