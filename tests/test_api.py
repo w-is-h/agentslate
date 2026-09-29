@@ -17,18 +17,22 @@ def client(tmp_path, monkeypatch):
         yield test_client
 
 
-def test_lock_blocks_user_writes_across_api_surfaces(client):
+def test_lock_blocks_content_edits_but_allows_nest_placement(client):
     assert (
         client.post("/api/memory", json={"path": "project", "content": "before"}).status_code == 200
     )
     assert client.post("/api/lock", json={"on": True}).status_code == 200
 
     memory = client.post("/api/memory", json={"path": "project", "content": "after"})
-    nest_add = client.post("/api/nest/add", json={"col": 1, "row": 1, "title": "blocked"})
+    nest_add = client.post("/api/nest/add", json={"col": 1, "row": 1, "title": "Notes"})
 
     assert memory.status_code == 423
     assert memory.json() == {"detail": "Slate is locked"}
-    assert nest_add.status_code == 423
+    assert nest_add.status_code == 200
+    canvas = client.get("/api/nest").json()["widgets"][0]["canvas"]
+    assert (
+        client.post("/api/canvas", json={"id": canvas["id"], "content": "after"}).status_code == 423
+    )
     assert store.memory_get(store.connect(), "project") == "before"
 
 
@@ -69,3 +73,40 @@ def test_html_widget_prefers_explicit_title_and_is_sandboxed_when_opened_directl
     assert board["widgets"][0]["title"] == "Chosen title"
     document = client.get(f"/api/nest/item?id={widget_id}")
     assert document.headers["content-security-policy"] == "sandbox allow-scripts"
+
+
+def test_settings_widget_uses_free_cell_on_its_board_while_locked(client):
+    client.post("/api/nest/board", json={"name": "work"})
+    client.post("/api/nest/add", json={"board": "work", "col": 1, "row": 1, "title": "Notes"})
+    client.post("/api/lock", json={"on": True})
+
+    made = client.post("/api/nest/settings", json={"name": "work"})
+    assert made.status_code == 200
+    widgets = client.get("/api/nest?board=work").json()["widgets"]
+    widget = next(w for w in widgets if w["id"] == made.json()["id"])
+    assert (widget["kind"], widget["col"], widget["row"], widget["w"], widget["h"]) == (
+        "settings",
+        2,
+        1,
+        1,
+        1,
+    )
+    assert not any(w["hidden"] for w in widgets)
+    assert client.get("/api/nest").json()["widgets"] == []
+
+    client.post("/api/nest/resize", json={"id": widget["id"], "col": 2, "row": 2, "w": 2, "h": 2})
+    moved = client.get("/api/nest?board=work").json()["widgets"][-1]
+    assert (moved["col"], moved["row"], moved["w"], moved["h"]) == (2, 2, 2, 2)
+    client.post("/api/nest/rm", json={"id": widget["id"]})
+    assert len(client.get("/api/nest?board=work").json()["widgets"]) == 1
+
+
+def test_settings_widget_full_board_leaves_existing_widgets_untouched(client):
+    db = store.connect()
+    store.nest_add(db, "main", "settings", 1, 1, "", "board settings", w=4, h=4)
+    before = client.get("/api/nest").json()
+
+    response = client.post("/api/nest/settings", json={"name": "main"})
+    assert response.status_code == 409
+    assert response.json() == {"error": "Board is full — no free cell for the widget."}
+    assert client.get("/api/nest").json() == before

@@ -32,7 +32,8 @@ copies of image and file widgets).
        z, board, ref, title, ...) w×h cells from (col,row). kind 'canvas'
                                   (ref = canvas id), 'image' / 'file' (ref =
                                   JSON item list under NEST_DIR), 'html'
-                                  (ref = html_doc id). Higher z covers.
+                                  (ref = html_doc id), 'settings' (empty
+                                  ref, built-in controls). Higher z covers.
   kv(k, v)                        small settings: board list and sizes,
                                   memory and canvas locks.
 

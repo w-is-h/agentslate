@@ -15,6 +15,7 @@ import { formatSize, grpColor } from "@/lib/format";
 import { mdlite } from "@/lib/mdlite";
 import { ImageLightbox, Nothing, RawHtml } from "@/components/bits";
 import HtmlEditor from "@/components/nest/HtmlEditor";
+import BoardSettings from "@/components/nest/BoardSettings";
 import WidgetByline from "@/components/nest/WidgetByline";
 import Prose from "@/components/Prose";
 import { canvasBody, isMarkdownCanvas } from "@/lib/canvas";
@@ -251,8 +252,10 @@ function NestBox({ w }: { w: NestWidget }) {
 
 export function PhoneNest() {
   // which board rides in the URL (?b=name), as on the desktop
+  const nav = useNavigate();
   const name = new URLSearchParams(useLocation().search).get("b") || "main";
-  const [board, setBoard] = useState<{ widgets: NestWidget[]; boards: string[] }>();
+  const [board, setBoard] = useState<Awaited<ReturnType<typeof getNest>>>();
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
     // a board switch can leave the old board's fetch in flight — stale
     // responses must not land
@@ -261,7 +264,7 @@ export function PhoneNest() {
     load();
     const t = setInterval(load, 3000);
     return () => { stale = true; clearInterval(t); };
-  }, [name]);
+  }, [name, revision]);
   if (!board) return <Nothing>loading…</Nothing>;
   const visible = board.widgets.filter(w => !w.hidden);
   return (
@@ -280,7 +283,15 @@ export function PhoneNest() {
       {visible.length ? (
         <div className="flex flex-col gap-3">
           {[...visible].sort((a, b) => a.row - b.row || a.col - b.col).map(w => (
-            <NestBox key={w.id} w={w} />
+            w.kind === "settings" ? (
+              <section key={w.id} className="rounded-md border border-line bg-raise">
+                <BoardSettings embedded cols={board.cols} rows={board.rows}
+                               board={board.board} boards={board.boards}
+                               hidden={board.widgets.length - visible.length}
+                               onChanged={() => setRevision(r => r + 1)}
+                               onOpen={b => nav(b === "main" ? "/nest" : `/nest?b=${encodeURIComponent(b)}`)} />
+              </section>
+            ) : <NestBox key={w.id} w={w} />
           ))}
         </div>
       ) : <Nothing>this board is empty.</Nothing>}

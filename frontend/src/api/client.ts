@@ -32,7 +32,7 @@ export interface CanvasMeta { id: number; ts: string; label: string; source: str
 
 export interface NestItem { url: string; name: string; size: number }
 export interface NestWidget {
-  id: number; kind: "canvas" | "image" | "html" | "file"; col: number; row: number; w: number; h: number;
+  id: number; kind: "canvas" | "image" | "html" | "file" | "settings"; col: number; row: number; w: number; h: number;
   title: string; descr: string; hidden: boolean; author: Author; ts: string;
   canvas?: CanvasDoc | null; items?: NestItem[];
   html?: HtmlMeta | null;

@@ -87,7 +87,7 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
   onHide?: () => void; // only kinds whose thing survives a hide get the ×
   contentGrab?: boolean; // media kinds: the content itself drags the tile
   overlayHead?: boolean; // html: hover drag bar above its full-size frame
-  head: ReactNode; footer?: ReactNode; children: ReactNode;
+  head?: ReactNode; footer?: ReactNode; children: ReactNode;
 }) {
   const [preview, setPreview] = useState<Rect | null>(null);
   const ref = useRef<HTMLElement>(null);
@@ -172,7 +172,7 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
   // two dress codes: media kinds (image, html) sit flat on the page —
   // no border, no panel, edge-to-edge; text kinds (canvas, file) keep the
   // classic padded box. Drag always lifts on a solid panel.
-  const boxed = w.kind === "canvas" || w.kind === "file";
+  const boxed = w.kind === "canvas" || w.kind === "file" || w.kind === "settings";
   return (
     <section ref={ref}
              style={{ gridColumn: `${rect.col} / span ${rect.w}`, gridRow: `${rect.row} / span ${rect.h}` }}
@@ -208,14 +208,14 @@ function Tile({ w, cols, rows, onResize, onHide, contentGrab, overlayHead = fals
       )}
       {/* head stripe: a full-width shaded band across the tile's top,
           revealed only while the pointer is over it. pr clears the × */}
-      <div onPointerDown={grab} onClickCapture={clickGuard}
+      {head && <div onPointerDown={grab} onClickCapture={clickGuard}
            className={cn("absolute inset-x-0 top-0 flex cursor-grab items-center rounded-t-md",
                            overlayHead ? "z-50" : "z-10",
                            "bg-raise/90 px-3 py-1.5 pr-9 backdrop-blur-sm",
                            "transition-opacity active:cursor-grabbing",
                            preview ? "opacity-100" : "opacity-0 hover:opacity-100")}>
         {head}
-      </div>
+      </div>}
       {/* foot strip: transparent, on tile hover — the shade lives on the
           pill around the placer text, bottom right */}
       {footer && (
@@ -503,6 +503,11 @@ export default function Nest() {
   const visible = board.widgets.filter(w => !w.hidden);
   const empty = freeCells(board);
   const done = () => { setAdding(null); load(); };
+  const settings = {
+    cols: board.cols, rows: board.rows, hidden: board.widgets.length - visible.length,
+    board: board.board, boards: board.boards, full,
+    onFull: () => setFull(f => !f), onChanged: done, onOpen: open,
+  };
 
   return (
     // the whole board is the viewport: fixed tracks, cells stretch, and
@@ -516,7 +521,11 @@ export default function Nest() {
           w, cols: board.cols, rows: board.rows,
           onResize: resize(w.id), onRm: () => rm(w.id),
         };
-        return w.kind === "canvas"
+        return w.kind === "settings"
+          ? <Tile key={w.id} {...props} onHide={props.onRm} contentGrab>
+              <BoardSettings {...settings} embedded />
+            </Tile>
+          : w.kind === "canvas"
           ? (w.canvas && <CanvasWidget key={w.id} {...props} />)
           : w.kind === "image"
             ? <ImageWidget key={w.id} {...props} />
@@ -531,11 +540,7 @@ export default function Nest() {
         <GhostCell key={`g${c.col},${c.row}`} col={c.col} row={c.row} board={board.board}
                    onOpen={() => setAdding(c)} onAdded={done} />
       ))}
-      <BoardSettings cols={board.cols} rows={board.rows}
-                     hidden={board.widgets.length - visible.length}
-                     board={board.board} boards={board.boards}
-                     full={full} onFull={() => setFull(f => !f)} onChanged={done}
-                     onOpen={open} />
+      <BoardSettings key={board.board} {...settings} />
     </div>
   );
 }

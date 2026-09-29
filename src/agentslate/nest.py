@@ -322,6 +322,21 @@ class Board(BaseModel):
     name: str
 
 
+@router.post("/api/nest/settings")
+def nest_settings(req: Board):
+    db = connect()
+    if req.name not in store.nest_boards(db):
+        return JSONResponse(status_code=404, content={"error": "no such board"})
+    spot = store.nest_free_cell(db, req.name)
+    if not spot:
+        return JSONResponse(
+            status_code=409, content={"error": "Board is full — no free cell for the widget."}
+        )
+    col, row = spot
+    wid = store.nest_add(db, req.name, "settings", col, row, "", "board settings", author="user")
+    return {"ok": True, "id": wid}
+
+
 @router.post("/api/nest/clear")
 def nest_clear(req: Board):
     store.nest_clear(connect(), req.name)

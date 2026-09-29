@@ -649,6 +649,8 @@ def nest_view(board: str = "") -> str:
         elif w["kind"] == "html":
             doc = store.html_get(db, int(w["ref"]))
             what = f'html "{doc["title"] if doc else "?"}" (doc #{w["ref"]})'
+        elif w["kind"] == "settings":
+            what = "board settings"
         else:
             what = f'{w["kind"]} "{w["title"]}" at ' + ", ".join(
                 i["p"] for i in store.nest_items(w)
@@ -750,18 +752,25 @@ def nest_add(
     the way the user hands files over: their uploads are readable with
     nest_read). Every path is the server's own disk: an image or file on
     another machine POSTs its bytes instead, and the missing-file error
-    prints the exact curl. Files are copied into the store. The board is
+    prints the exact curl. Files are copied into the store. kind "settings":
+    the board navigation and settings controls; no content needed. The board is
     a grid, 4×4 unless resized (nest_view names the size): col,row is the
     top-left cell, omit both for the first free fit; w,h the size in cells.
     Widgets stack: a rect placed over others hides them until it moves —
     the return names what got covered. board names a board ("main" by
     default; a new name creates one). Returns the widget id (quote as wN)."""
-    if kind not in ("canvas", "image", "html", "file"):
-        raise ValueError("kind is 'canvas', 'image', 'html' or 'file'")
+    if kind not in ("canvas", "image", "html", "file", "settings"):
+        raise ValueError("kind is 'canvas', 'image', 'html', 'file' or 'settings'")
     db = connect()
     board = store.nest_ensure_board(db, board) if board.strip() else "main"
     col, row = _place(db, board, col, row, w, h)
     before = store.nest_hidden_ids(store.nest_all(db, board))
+    if kind == "settings":
+        wid = store.nest_add(db, board, kind, col, row, "", "board settings", w=w, h=h)
+        return (
+            f"nest [w{wid}]: board settings at {col},{row} "
+            f'({w}×{h}) on "{board}"{_covered(db, before, board)}'
+        )
     if kind == "canvas":
         if canvas_id:
             doc = store.canvas_get(db, canvas_id)

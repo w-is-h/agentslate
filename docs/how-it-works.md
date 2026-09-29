@@ -37,6 +37,8 @@ The brain and memory pages answer, “What should a future session already know?
 
 Canvases and the nest answer, “What are we working on together?” An agent can place a report on a canvas, pin an image, share generated HTML, or collect files on a project board. The user can edit the same canvas or upload material for the agent to read.
 
+In Nest settings, **show widget** places a widget in the first free cell on the current board. It reports when the board is full. The widget starts with board navigation; its **all settings** switch reveals the other controls. It can be moved, resized, or removed like other widgets; it stays on that board, and the floating settings button remains available.
+
 This separation keeps durable context compact while allowing working documents to be as large and visual as the task requires.
 
 ## Tools and writes

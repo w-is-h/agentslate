@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Lock, LockOpen, Maximize2, Minimize2, Pencil, Settings, Trash2 } from "lucide-react";
+import { Blocks, Lock, LockOpen, Maximize2, Minimize2, Pencil, Settings, Trash2 } from "lucide-react";
 import { post } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { useLock } from "@/hooks/useLock";
@@ -7,15 +7,14 @@ import { cn } from "@/lib/utils";
 
 const GRIDS: [number, number][] = [[4, 4], [6, 4], [8, 5]];
 
-/* Named boards, grid sizing, full-screen mode, the global lock, and
-   destructive board actions live behind one floating settings button.
-   The lock is toggled here but never binds the board: every action in
-   this menu works while it is on. */
-export default function BoardSettings({ cols, rows, hidden, board, boards, full, onFull, onChanged, onOpen }: {
+/* The same controls appear in the floating menu and a board's settings
+   widget. Board actions work while the content lock is on. */
+export default function BoardSettings({ cols, rows, hidden, board, boards, full, onFull, onChanged, onOpen, embedded = false }: {
   cols: number; rows: number; hidden: number;
   board: string; boards: string[];
-  full: boolean; onFull: () => void; onChanged: () => void;
+  full?: boolean; onFull?: () => void; onChanged: () => void;
   onOpen: (name: string) => void;
+  embedded?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
@@ -23,6 +22,10 @@ export default function BoardSettings({ cols, rows, hidden, board, boards, full,
   const [newName, setNewName] = useState("");
   const [rename, setRename] = useState<string | null>(null);
   const [armedBoard, setArmedBoard] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const showSettings = !embedded || expanded;
   const { locked, toggle: toggleLock } = useLock();
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +43,20 @@ export default function BoardSettings({ cols, rows, hidden, board, boards, full,
       window.removeEventListener("blur", blur);
     };
   }, [open]);
+
+  const showWidget = async () => {
+    setPlacing(true);
+    setError("");
+    try {
+      await post("/api/nest/settings", { name: board });
+      setOpen(false);
+      onChanged();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setPlacing(false);
+    }
+  };
 
   const createBoard = (event: FormEvent) => {
     event.preventDefault();
@@ -78,12 +95,37 @@ export default function BoardSettings({ cols, rows, hidden, board, boards, full,
     post("/api/nest/clear", { name: board }).then(() => { setOpen(false); onChanged(); });
   };
 
-  return (
-    <div ref={boxRef} className="fixed right-3 bottom-3 z-[65] flex flex-col items-end gap-2">
-      {open && (
-        <div className="flex max-w-72 flex-col gap-2.5 rounded-md border border-line bg-raise p-3 shadow-float">
-          <span className="flex items-center gap-2 font-mono text-[11px] tracking-[.14em] text-faint uppercase">
-            boards
+  const panel = (
+    <div className={cn("flex min-h-0 flex-col",
+                       embedded ? "flex-1" : "max-h-[80dvh] max-w-72 rounded-md border border-line bg-raise shadow-float")}>
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain p-3 [scrollbar-width:thin] [&>*]:shrink-0">
+        {!embedded && <span className="flex items-center gap-2 font-mono text-[11px] tracking-[.14em] text-faint uppercase">
+          boards
+        </span>}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {boards.map(name => name === board && rename !== null ? (
+            <form key={name} onSubmit={commitRename} className="max-w-full">
+              <input autoFocus value={rename} onChange={event => setRename(event.target.value)}
+                     onKeyDown={event => event.key === "Escape" && setRename(null)}
+                     onBlur={() => setRename(null)}
+                     className="h-8 w-28 max-w-full rounded-md border border-gold-dim bg-bg px-2 font-mono text-[12px] text-ink outline-none" />
+            </form>
+          ) : (
+            <Button key={name} variant="outline" size="sm"
+                    className={cn("max-w-[min(10rem,100%)]", name === board && "border-gold-dim text-gold")}
+                    onClick={() => onOpen(name)}>
+              <span className="truncate">{name}</span>
+            </Button>
+          ))}
+          {showSettings && <form onSubmit={createBoard} className="max-w-full">
+            <input value={newName} onChange={event => setNewName(event.target.value)}
+                   placeholder="new board" title="name a new board — Enter creates it and opens it here"
+                   className="h-8 w-24 max-w-full rounded-md border border-line bg-bg px-2 font-mono text-[12px] text-ink outline-none placeholder:text-faint focus:border-gold-dim" />
+          </form>}
+        </div>
+        {showSettings && <>
+          <span className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-[.14em] text-faint uppercase">
+            this board
             {board !== "main" && (
               <span className="ml-auto flex items-center gap-1.5">
                 <button title={`rename "${board}"`} onClick={() => setRename(board)}
@@ -99,29 +141,7 @@ export default function BoardSettings({ cols, rows, hidden, board, boards, full,
               </span>
             )}
           </span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {boards.map(name => name === board && rename !== null ? (
-              <form key={name} onSubmit={commitRename}>
-                <input autoFocus value={rename} onChange={event => setRename(event.target.value)}
-                       onKeyDown={event => event.key === "Escape" && setRename(null)}
-                       onBlur={() => setRename(null)}
-                       className="h-8 w-28 rounded-md border border-gold-dim bg-bg px-2 font-mono text-[12px] text-ink outline-none" />
-              </form>
-            ) : (
-              <Button key={name} variant="outline" size="sm"
-                      className={cn("max-w-40", name === board && "border-gold-dim text-gold")}
-                      onClick={() => onOpen(name)}>
-                <span className="truncate">{name}</span>
-              </Button>
-            ))}
-            <form onSubmit={createBoard}>
-              <input value={newName} onChange={event => setNewName(event.target.value)}
-                     placeholder="new board" title="name a new board — Enter creates it and opens it here"
-                     className="h-8 w-24 rounded-md border border-line bg-bg px-2 font-mono text-[12px] text-ink outline-none placeholder:text-faint focus:border-gold-dim" />
-            </form>
-          </div>
-          <span className="font-mono text-[11px] tracking-[.14em] text-faint uppercase">this board</span>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {GRIDS.map(([gridCols, gridRows]) => (
               <Button key={gridCols} variant="outline" size="sm"
                       title={gridCols < cols || gridRows < rows ? "smaller grid — widgets past the edge close" : `${gridCols}×${gridRows}`}
@@ -136,27 +156,52 @@ export default function BoardSettings({ cols, rows, hidden, board, boards, full,
                      className="h-8 w-14 rounded-md border border-line bg-bg px-2 text-center font-mono text-[12px] text-ink outline-none placeholder:text-faint focus:border-gold-dim" />
             </form>
           </div>
-          <Button variant="outline" size="sm" onClick={onFull}>
+          {onFull && <Button variant="outline" size="sm" onClick={onFull}
+                             className="h-auto min-h-8 whitespace-normal py-1.5">
             {full ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
             {full ? "exit full screen" : "full screen"}
-          </Button>
+          </Button>}
           <Button variant="outline" size="sm" onClick={toggleLock}
-                  className={cn(locked && "border-gold-dim text-gold")}>
+                  className={cn("h-auto min-h-8 whitespace-normal py-1.5", locked && "border-gold-dim text-gold")}>
             {locked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
-            {locked ? "locked — unlock" : "lock canvases and pages"}
+            <span className="min-w-0 [overflow-wrap:anywhere]">{locked ? "locked — unlock" : "lock canvases and pages"}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={clear}
-                  className={cn(armed && "border-overdue text-overdue")}>
-            <Trash2 className="size-3.5" />{armed ? "sure? every widget goes" : "clear board"}
+                  className={cn("h-auto min-h-8 whitespace-normal py-1.5", armed && "border-overdue text-overdue")}>
+            <Trash2 className="size-3.5" /><span className="min-w-0 [overflow-wrap:anywhere]">{armed ? "sure? every widget goes" : "clear board"}</span>
           </Button>
           {hidden > 0 && (
             <span className="font-mono text-[11px] text-faint">
               {hidden} hidden under overlaps — move things to uncover
             </span>
           )}
-        </div>
+        </>}
+        {!embedded && (
+          <Button variant="outline" size="sm" onClick={showWidget} disabled={placing}>
+            <Blocks className="size-3.5" />show widget
+          </Button>
+        )}
+        {error && <p role="alert" className="text-[12px] text-overdue">{error}</p>}
+      </div>
+      {embedded && (
+        <button role="switch" aria-label="all settings" aria-checked={expanded}
+                onClick={() => { setExpanded(value => !value); setRename(null); }}
+                className="mx-3 mb-3 flex min-h-6 shrink-0 cursor-pointer items-center justify-between gap-2 text-[11px] text-dim hover:text-ink">
+          <span className="min-w-0 text-left">all settings</span>
+          <span className={cn("flex h-4 w-7 flex-none items-center rounded-full border px-0.5",
+                              expanded ? "border-gold bg-gold/20" : "border-line bg-bg")}>
+            <span className={cn("size-2.5 rounded-full transition-transform",
+                                expanded ? "translate-x-3 bg-gold" : "bg-faint")} />
+          </span>
+        </button>
       )}
-      <button onClick={() => setOpen(current => !current)} title="board settings"
+    </div>
+  );
+  if (embedded) return panel;
+  return (
+    <div ref={boxRef} className="fixed right-3 bottom-3 z-[65] flex flex-col items-end gap-2">
+      {open && panel}
+      <button onClick={() => { setError(""); setOpen(current => !current); }} title="board settings"
               className={cn("flex size-9 cursor-pointer items-center justify-center rounded-full",
                               "border border-line bg-raise text-faint shadow-float transition-colors",
                               "hover:text-ink", open && "text-gold hover:text-gold")}>
